@@ -196,6 +196,321 @@ export class ProcessingHelper {
     }
   }
 
+  public async generateChatReply(message: string): Promise<string> {
+    const config = configHelper.loadConfig()
+
+    if (!message || message.trim() === "") {
+      return ""
+    }
+
+    if (config.apiProvider === "openai") {
+      if (!this.openaiClient) {
+        this.initializeAIClient()
+      }
+      if (!this.openaiClient) {
+        throw new Error("OpenAI client not initialized")
+      }
+
+      const response = await this.openaiClient.chat.completions.create({
+        model: config.solutionModel || "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a concise assistant inside a desktop app chat. Answer directly and briefly unless the user asks for detail."
+          },
+          { role: "user", content: message }
+        ],
+        temperature: 0.4,
+        max_tokens: 800
+      })
+
+      return response.choices?.[0]?.message?.content?.trim() || ""
+    }
+
+    if (config.apiProvider === "gemini") {
+      if (!this.geminiApiKey) {
+        this.initializeAIClient()
+      }
+      if (!this.geminiApiKey) {
+        throw new Error("Gemini API key not initialized")
+      }
+
+      const geminiMessages: GeminiMessage[] = [
+        {
+          role: "user",
+          parts: [
+            {
+              text:
+                "You are a concise assistant inside a desktop app chat. Answer directly and briefly unless the user asks for detail.\n\nUser message: " +
+                message
+            }
+          ]
+        }
+      ]
+
+      const response = await axios.default.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${config.solutionModel || "gemini-flash-lite-latest"}:generateContent?key=${this.geminiApiKey}`,
+        {
+          contents: geminiMessages,
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 800
+          }
+        }
+      )
+
+      const responseData = response.data as GeminiResponse
+      const text = responseData?.candidates?.[0]?.content?.parts?.[0]?.text
+      return (text || "").trim()
+    }
+
+    if (config.apiProvider === "anthropic") {
+      if (!this.anthropicClient) {
+        this.initializeAIClient()
+      }
+      if (!this.anthropicClient) {
+        throw new Error("Anthropic client not initialized")
+      }
+
+      const response = await this.anthropicClient.messages.create({
+        model: config.solutionModel || "claude-3-7-sonnet-20250219",
+        max_tokens: 800,
+        temperature: 0.4,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text:
+                  "You are a concise assistant inside a desktop app chat. Answer directly and briefly unless the user asks for detail.\n\nUser message: " +
+                  message
+              }
+            ]
+          }
+        ]
+      })
+
+      const first = response.content?.[0] as { type: "text"; text: string } | undefined
+      return (first?.text || "").trim()
+    }
+
+    throw new Error("Unsupported API provider")
+  }
+
+  public async generateChatReplyWithContext(
+    message: string,
+    history: Array<{ role: string; content: string }>,
+    screenshotPaths: string[]
+  ): Promise<string> {
+    const config = configHelper.loadConfig()
+
+    // Load screenshots if provided
+    const screenshots: Array<{ data: string }> = []
+    if (screenshotPaths && screenshotPaths.length > 0) {
+      for (const path of screenshotPaths) {
+        try {
+          if (fs.existsSync(path)) {
+            const data = fs.readFileSync(path).toString('base64')
+            screenshots.push({ data })
+          }
+        } catch (err) {
+          console.error(`Error reading screenshot ${path}:`, err)
+        }
+      }
+    }
+
+    if (config.apiProvider === "openai") {
+      if (!this.openaiClient) {
+        this.initializeAIClient()
+      }
+      if (!this.openaiClient) {
+        throw new Error("OpenAI client not initialized")
+      }
+
+      // Build messages with history
+      const messages: Array<any> = [
+        {
+          role: "system",
+          content: "You are a helpful AI assistant specialized in coding and technical questions. Format your responses using markdown for better readability. Use code blocks with language tags for code examples."
+        }
+      ]
+
+      // Add conversation history
+      for (const msg of history) {
+        messages.push({
+          role: msg.role === "user" ? "user" : "assistant",
+          content: msg.content
+        })
+      }
+
+      // Add current message with screenshots if any
+      if (screenshots.length > 0) {
+        const content: Array<any> = []
+        
+        if (message && message.trim()) {
+          content.push({ type: "text", text: message })
+        }
+        
+        for (const screenshot of screenshots) {
+          content.push({
+            type: "image_url",
+            image_url: { url: `data:image/png;base64,${screenshot.data}` }
+          })
+        }
+        
+        messages.push({
+          role: "user",
+          content: content
+        })
+      } else if (message && message.trim()) {
+        messages.push({
+          role: "user",
+          content: message
+        })
+      }
+
+      const response = await this.openaiClient.chat.completions.create({
+        model: config.solutionModel || "gpt-4o",
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+
+      return response.choices?.[0]?.message?.content?.trim() || ""
+    }
+
+    if (config.apiProvider === "gemini") {
+      if (!this.geminiApiKey) {
+        this.initializeAIClient()
+      }
+      if (!this.geminiApiKey) {
+        throw new Error("Gemini API key not initialized")
+      }
+
+      // Build Gemini messages with history
+      const geminiMessages: GeminiMessage[] = []
+      
+      // Add system message as first user message
+      geminiMessages.push({
+        role: "user",
+        parts: [{
+          text: "You are a helpful AI assistant specialized in coding and technical questions. Format your responses using markdown for better readability. Use code blocks with language tags for code examples."
+        }]
+      })
+      
+      geminiMessages.push({
+        role: "model",
+        parts: [{ text: "Understood. I'll help you with coding and technical questions using clear markdown formatting." }]
+      })
+
+      // Add conversation history
+      for (const msg of history) {
+        geminiMessages.push({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.content }]
+        })
+      }
+
+      // Add current message with screenshots
+      const currentParts: Array<any> = []
+      
+      if (message && message.trim()) {
+        currentParts.push({ text: message })
+      }
+      
+      for (const screenshot of screenshots) {
+        currentParts.push({
+          inlineData: {
+            mimeType: "image/png",
+            data: screenshot.data
+          }
+        })
+      }
+      
+      if (currentParts.length > 0) {
+        geminiMessages.push({
+          role: "user",
+          parts: currentParts
+        })
+      }
+
+      const response = await axios.default.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${config.solutionModel || "gemini-flash-lite-latest"}:generateContent?key=${this.geminiApiKey}`,
+        {
+          contents: geminiMessages,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2000
+          }
+        }
+      )
+
+      const responseData = response.data as GeminiResponse
+      const text = responseData?.candidates?.[0]?.content?.parts?.[0]?.text
+      return (text || "").trim()
+    }
+
+    if (config.apiProvider === "anthropic") {
+      if (!this.anthropicClient) {
+        this.initializeAIClient()
+      }
+      if (!this.anthropicClient) {
+        throw new Error("Anthropic client not initialized")
+      }
+
+      // Build messages with history
+      const messages: Array<any> = []
+
+      // Add conversation history
+      for (const msg of history) {
+        messages.push({
+          role: msg.role === "user" ? "user" : "assistant",
+          content: [{ type: "text", text: msg.content }]
+        })
+      }
+
+      // Add current message with screenshots
+      const currentContent: Array<any> = []
+      
+      if (message && message.trim()) {
+        currentContent.push({ type: "text", text: message })
+      }
+      
+      for (const screenshot of screenshots) {
+        currentContent.push({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: "image/png",
+            data: screenshot.data
+          }
+        })
+      }
+      
+      if (currentContent.length > 0) {
+        messages.push({
+          role: "user",
+          content: currentContent
+        })
+      }
+
+      const response = await this.anthropicClient.messages.create({
+        model: config.solutionModel || "claude-3-7-sonnet-20250219",
+        max_tokens: 2000,
+        temperature: 0.7,
+        system: "You are a helpful AI assistant specialized in coding and technical questions. Format your responses using markdown for better readability. Use code blocks with language tags for code examples.",
+        messages: messages
+      })
+
+      const first = response.content?.[0] as { type: "text"; text: string } | undefined
+      return (first?.text || "").trim()
+    }
+
+    throw new Error("Unsupported API provider")
+  }
+
   public async processScreenshots(): Promise<void> {
     const mainWindow = this.deps.getMainWindow()
     if (!mainWindow) return

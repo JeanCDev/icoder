@@ -339,6 +339,27 @@ async function createWindow(): Promise<void> {
   state.mainWindow.on("resize", handleWindowResize)
   state.mainWindow.on("closed", handleWindowClosed)
 
+  // Add focus/blur listeners for click-through behavior
+  let clickThroughState = false
+  
+  state.mainWindow.on("blur", () => {
+    if (state.mainWindow && !state.mainWindow.isDestroyed() && state.isWindowVisible) {
+      // Enable click-through when window loses focus
+      state.mainWindow.setIgnoreMouseEvents(true, { forward: true })
+      clickThroughState = true
+      console.log('Window lost focus, click-through enabled')
+    }
+  })
+
+  state.mainWindow.on("focus", () => {
+    if (state.mainWindow && !state.mainWindow.isDestroyed() && state.isWindowVisible) {
+      // Disable click-through when window gains focus
+      state.mainWindow.setIgnoreMouseEvents(false)
+      clickThroughState = false
+      console.log('Window gained focus, click-through disabled')
+    }
+  })
+
   // Initialize window state
   const bounds = state.mainWindow.getBounds()
   state.windowPosition = { x: bounds.x, y: bounds.y }
@@ -396,7 +417,7 @@ function hideMainWindow(): void {
     state.mainWindow.setIgnoreMouseEvents(true, { forward: true });
     state.mainWindow.setOpacity(0);
     state.isWindowVisible = false;
-    console.log('Window hidden, opacity set to 0');
+    console.log('Window hidden, opacity set to 0, click-through enabled');
   }
 }
 
@@ -414,11 +435,11 @@ function showMainWindow(): void {
       visibleOnFullScreen: true
     });
     state.mainWindow.setContentProtection(true);
-    state.mainWindow.setOpacity(0); // Set opacity to 0 before showing
-    state.mainWindow.showInactive(); // Use showInactive instead of show+focus
-    state.mainWindow.setOpacity(1); // Then set opacity to 1 after showing
+    state.mainWindow.setOpacity(0);
+    state.mainWindow.showInactive();
+    state.mainWindow.setOpacity(1);
     state.isWindowVisible = true;
-    console.log('Window shown with showInactive(), opacity set to 1');
+    console.log('Window shown with showInactive(), opacity set to 1, click-through disabled');
   }
 }
 

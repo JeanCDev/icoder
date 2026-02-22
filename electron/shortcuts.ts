@@ -4,6 +4,7 @@ import { configHelper } from "./ConfigHelper"
 
 export class ShortcutsHelper {
   private deps: IShortcutsHelperDeps
+  private isClickThroughEnabled: boolean = false
 
   constructor(deps: IShortcutsHelperDeps) {
     this.deps = deps
@@ -52,9 +53,10 @@ export class ShortcutsHelper {
       }
     })
 
-    globalShortcut.register("CommandOrControl+Enter", async () => {
-      await this.deps.processingHelper?.processScreenshots()
-    })
+    // Ctrl+Enter is now handled in the textarea for sending messages
+    // globalShortcut.register("CommandOrControl+Enter", async () => {
+    //   await this.deps.processingHelper?.processScreenshots()
+    // })
 
     globalShortcut.register("CommandOrControl+R", () => {
       console.log(
@@ -104,6 +106,34 @@ export class ShortcutsHelper {
     globalShortcut.register("CommandOrControl+B", () => {
       console.log("Command/Ctrl + B pressed. Toggling window visibility.")
       this.deps.toggleMainWindow()
+    })
+
+    globalShortcut.register("CommandOrControl+.", () => {
+      console.log("Command/Ctrl + . pressed. Toggling click-through.")
+      const mainWindow = this.deps.getMainWindow()
+
+      console.log("Main window focused:", mainWindow.isFocused())
+
+
+      if (mainWindow) {
+        if (!mainWindow.isFocused()) {
+          this.isClickThroughEnabled = false;
+        } else {
+          this.isClickThroughEnabled = !this.isClickThroughEnabled
+        }
+
+        if (this.isClickThroughEnabled) {
+          // Enable click-through
+          console.log("Enabling click-through via shortcut")
+          mainWindow.blur()
+          mainWindow.webContents.send("click-through-toggled", true)
+        } else {
+          // Disable click-through
+          console.log("Disabling click-through via shortcut")
+          mainWindow.focus()
+          mainWindow.webContents.send("click-through-toggled", false)
+        }
+      }
     })
 
     globalShortcut.register("CommandOrControl+Q", () => {

@@ -1,7 +1,6 @@
 // ipcHandlers.ts
 
-import { ipcMain, shell, dialog } from "electron"
-import { randomBytes } from "crypto"
+import { ipcMain, shell } from "electron"
 import { IIpcHandlerDeps } from "./main"
 import { configHelper } from "./ConfigHelper"
 
@@ -101,6 +100,62 @@ export function initializeIpcHandlers(deps: IIpcHandlerDeps): void {
     }
     
     await deps.processingHelper?.processScreenshots()
+  })
+
+  ipcMain.handle("chat-message", async (_event: any, message: string) => {
+    if (!configHelper.hasApiKey()) {
+      return { success: false, error: "API key required" }
+    }
+
+    if (!deps.processingHelper) {
+      return { success: false, error: "Processing helper not available" }
+    }
+
+    try {
+      const text = await deps.processingHelper.generateChatReply(message)
+      return { success: true, text }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return { success: false, error: errorMessage }
+    }
+  })
+
+  ipcMain.handle("chat-message-with-context", async (_event: any, payload: {
+    message: string;
+    history: Array<{ role: string; content: string }>;
+    screenshots: string[];
+  }) => {
+    if (!configHelper.hasApiKey()) {
+      return { success: false, error: "API key required" }
+    }
+
+    if (!deps.processingHelper) {
+      return { success: false, error: "Processing helper not available" }
+    }
+
+    try {
+      const text = await deps.processingHelper.generateChatReplyWithContext(
+        payload.message,
+        payload.history,
+        payload.screenshots
+      )
+      return { success: true, text }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      return { success: false, error: errorMessage }
+    }
+  })
+
+  ipcMain.handle("show-settings", () => {
+    console.log('show-settings IPC handler called')
+    const mainWindow = deps.getMainWindow();
+    if (mainWindow) {
+      console.log('Sending show-settings-dialog event to renderer')
+      mainWindow.webContents.send("show-settings-dialog");
+      return { success: true };
+    }
+    console.log('Main window not available')
+    return { success: false, error: "Main window not available" };
   })
 
   // Window dimension handlers

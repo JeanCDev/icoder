@@ -156,6 +156,16 @@ const electronAPI = {
   triggerMoveRight: () => ipcRenderer.invoke("trigger-move-right"),
   triggerMoveUp: () => ipcRenderer.invoke("trigger-move-up"),
   triggerMoveDown: () => ipcRenderer.invoke("trigger-move-down"),
+  chatMessage: (message: string) => ipcRenderer.invoke("chat-message", message),
+  chatMessageWithContext: (payload: { 
+    message: string; 
+    history: Array<{ role: string; content: string }>; 
+    screenshots: string[] 
+  }) => ipcRenderer.invoke("chat-message-with-context", payload),
+  showSettings: () => {
+    console.log('showSettings called from renderer')
+    return ipcRenderer.invoke("show-settings")
+  },
   onSubscriptionUpdated: (callback: () => void) => {
     const subscription = () => callback()
     ipcRenderer.on("subscription-updated", subscription)
@@ -236,6 +246,14 @@ const electronAPI = {
       ipcRenderer.removeListener("delete-last-screenshot", subscription)
     }
   },
+  onClickThroughToggled: (callback: (enabled: boolean) => void) => {
+    const subscription = (_event: any, enabled: boolean) => callback(enabled)
+    ipcRenderer.on("click-through-toggled", subscription)
+    return () => {
+      ipcRenderer.removeListener("click-through-toggled", subscription)
+    }
+  },
+
   deleteLastScreenshot: () => ipcRenderer.invoke("delete-last-screenshot")
 }
 

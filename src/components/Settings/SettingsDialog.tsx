@@ -12,6 +12,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Settings } from "lucide-react";
 import { useToast } from "../../contexts/toast";
+import { LanguageSelector } from "../shared/LanguageSelector";
 
 type APIProvider = "openai" | "gemini" | "anthropic";
 
@@ -175,9 +176,11 @@ const modelCategories: ModelCategory[] = [
 interface SettingsDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  currentLanguage?: string;
+  setLanguage?: (language: string) => void;
 }
 
-export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDialogProps) {
+export function SettingsDialog({ open: externalOpen, onOpenChange, currentLanguage = "python", setLanguage }: SettingsDialogProps) {
   const [open, setOpen] = useState(externalOpen || false);
   const [apiKey, setApiKey] = useState("");
   const [apiProvider, setApiProvider] = useState<APIProvider>("openai");
@@ -291,6 +294,31 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
   // Open external link handler
   const openExternalLink = (url: string) => {
     window.electronAPI.openLink(url);
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      // Clear any local storage or electron-specific data
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Clear the API key in the configuration
+      await window.electronAPI.updateConfig({
+        apiKey: '',
+      });
+      
+      showToast('Success', 'Logged out successfully', 'success');
+      
+      // Close dialog and reload the app after a short delay
+      handleOpenChange(false);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (err) {
+      console.error("Error logging out:", err);
+      showToast('Error', 'Failed to log out', 'error');
+    }
   };
 
   return (
@@ -464,11 +492,14 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
                 <div className="text-white/70">Toggle Visibility</div>
                 <div className="text-white/90 font-mono">Ctrl+B / Cmd+B</div>
                 
+                <div className="text-white/70">Toggle Click-Through</div>
+                <div className="text-white/90 font-mono">Ctrl+. / Cmd+.</div>
+                
                 <div className="text-white/70">Take Screenshot</div>
                 <div className="text-white/90 font-mono">Ctrl+H / Cmd+H</div>
                 
-                <div className="text-white/70">Process Screenshots</div>
-                <div className="text-white/90 font-mono">Ctrl+Enter / Cmd+Enter</div>
+                <div className="text-white/70">Send Message</div>
+                <div className="text-white/90 font-mono">Enter / Ctrl+Enter</div>
                 
                 <div className="text-white/70">Delete Last Screenshot</div>
                 <div className="text-white/90 font-mono">Ctrl+L / Cmd+L</div>
@@ -497,6 +528,24 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
                 <div className="text-white/70">Zoom In</div>
                 <div className="text-white/90 font-mono">Ctrl+= / Cmd+=</div>
               </div>
+            </div>
+          </div>
+          
+          <div className="space-y-4 mt-4">
+            <label className="text-sm font-medium text-white">Programming Language</label>
+            <p className="text-xs text-white/60 -mt-3 mb-2">
+              Select your preferred programming language for code generation
+            </p>
+            <div className="bg-black/30 border border-white/10 rounded-lg p-3">
+              <LanguageSelector 
+                currentLanguage={currentLanguage} 
+                setLanguage={(lang) => {
+                  if (setLanguage) {
+                    setLanguage(lang);
+                    window.electronAPI.updateConfig({ language: lang });
+                  }
+                }}
+              />
             </div>
           </div>
           
@@ -564,21 +613,30 @@ export function SettingsDialog({ open: externalOpen, onOpenChange }: SettingsDia
             })}
           </div>
         </div>
-        <DialogFooter className="flex justify-between sm:justify-between">
+        <DialogFooter className="flex justify-between sm:justify-between gap-2">
           <Button
             variant="outline"
-            onClick={() => handleOpenChange(false)}
-            className="border-white/10 hover:bg-white/5 text-white"
+            onClick={handleLogout}
+            className="border-red-500/50 hover:bg-red-500/10 text-red-400 hover:text-red-300"
           >
-            Cancel
+            Log Out
           </Button>
-          <Button
-            className="px-4 py-3 bg-white text-black rounded-xl font-medium hover:bg-white/90 transition-colors"
-            onClick={handleSave}
-            disabled={isLoading || !apiKey}
-          >
-            {isLoading ? "Saving..." : "Save Settings"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              className="border-white/10 hover:bg-white/5 text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              className="px-4 py-3 bg-white text-black rounded-xl font-medium hover:bg-white/90 transition-colors"
+              onClick={handleSave}
+              disabled={isLoading || !apiKey}
+            >
+              {isLoading ? "Saving..." : "Save Settings"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
