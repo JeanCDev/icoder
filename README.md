@@ -136,8 +136,8 @@ The best coding interview tools are often behind expensive paywalls, making them
 
 1. **Clone the repository**:
 ```bash
-git clone https://github.com/greeneu/interview-coder-withoupaywall-opensource.git
-cd interview-coder-withoupaywall-opensource
+git clone https://github.com/greeneu/chattiq-opensource.git
+cd chattiq-opensource
 ```
 
 2. **Install dependencies**:
@@ -255,9 +255,9 @@ Access via the gear icon in the top bar. Configure:
 ### Configuration Storage
 
 Settings are stored locally at:
-- **Windows**: `C:\Users\[USERNAME]\AppData\Roaming\interview-coder-v1\config.json`
-- **macOS**: `/Users/[USERNAME]/Library/Application Support/interview-coder-v1/config.json`
-- **Linux**: `~/.config/interview-coder-v1/config.json`
+- **Windows**: `C:\Users\[USERNAME]\AppData\Roaming\chattiq-v1\config.json`
+- **macOS**: `/Users/[USERNAME]/Library/Application Support/chattiq-v1/config.json`
+- **Linux**: `~/.config/chattiq-v1/config.json`
 
 ---
 
@@ -266,7 +266,7 @@ Settings are stored locally at:
 ### Directory Structure
 
 ```
-interview-coder-v1/
+chattiq-v1/
 ├── electron/                    # Electron main process code
 │   ├── main.ts                 # Main entry point
 │   ├── preload.ts              # IPC bridge
@@ -389,10 +389,10 @@ npm run package-mac
 ```
 
 Generates:
-- `Interview-Coder-x64.dmg`
-- `Interview-Coder-arm64.dmg`
-- `Interview-Coder-x64.zip`
-- `Interview-Coder-arm64.zip`
+- `Chattiq-x64.dmg`
+- `Chattiq-arm64.dmg`
+- `Chattiq-x64.zip`
+- `Chattiq-arm64.zip`
 
 ### Windows (Installer)
 
@@ -401,8 +401,8 @@ npm run package-win
 ```
 
 Generates:
-- `Interview Coder-Windows-1.0.19.exe`
-- `Interview Coder-Windows-1.0.19.exe.blockmap`
+- `Chattiq-Windows-1.0.19.exe`
+- `Chattiq-Windows-1.0.19.exe.blockmap`
 - `latest.yml` (for auto-updates)
 
 ### Linux (AppImage)
@@ -414,7 +414,7 @@ electron-builder --linux
 ```
 
 Generates:
-- `Interview-Coder-Linux-1.0.19.AppImage`
+- `Chattiq-Linux-1.0.19.AppImage`
 
 ### Build Process
 
@@ -497,8 +497,8 @@ const languages = [
 - Verify key format (OpenAI: "sk-", Anthropic: "sk-ant-")
 - Check key has sufficient credits
 - Delete config file and reconfigure:
-  - Windows: `%APPDATA%\interview-coder-v1\config.json`
-  - macOS: `~/Library/Application Support/interview-coder-v1/config.json`
+  - Windows: `%APPDATA%\chattiq-v1\config.json`
+  - macOS: `~/Library/Application Support/chattiq-v1/config.json`
 
 #### 3. Screenshots Not Working
 - **macOS**: Grant screen recording permission
@@ -535,9 +535,9 @@ mainWindow.webContents.openDevTools();
 ```
 
 **Log Locations**:
-- Windows: `%APPDATA%\interview-coder-v1\logs\`
-- macOS: `~/Library/Logs/interview-coder-v1/`
-- Linux: `~/.config/interview-coder-v1/logs/`
+- Windows: `%APPDATA%\chattiq-v1\logs\`
+- macOS: `~/Library/Logs/chattiq-v1/`
+- Linux: `~/.config/chattiq-v1/logs/`
 
 ### Compatibility
 
@@ -623,7 +623,7 @@ Remember: Technical interviews assess your problem-solving skills and understand
 
 ## Support and Questions
 
-- **Issues**: Open an issue on [GitHub](https://github.com/greeneu/interview-coder-withoupaywall-opensource/issues)
+- **Issues**: Open an issue on [GitHub](https://github.com/greeneu/chattiq-opensource/issues)
 - **Discussions**: Use GitHub Discussions for questions
 - **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
 
@@ -631,11 +631,11 @@ Remember: Technical interviews assess your problem-solving skills and understand
 
 ## Project Information
 
-- **Name**: interview-coder-v1
+- **Name**: chattiq-v1
 - **Version**: 1.0.19
 - **License**: AGPL-3.0-or-later
-- **Author**: Interview Coder Contributors
-- **Repository**: https://github.com/greeneu/interview-coder-withoupaywall-opensource
+- **Author**: Chattiq Contributors
+- **Repository**: https://github.com/greeneu/chattiq-opensource
 
 ---
 
@@ -663,4 +663,4 @@ Remember: Technical interviews assess your problem-solving skills and understand
 ---
 
 **Last Updated**: 2024  
-**Maintained by**: Interview Coder Contributors
+**Maintained by**: Chattiq Contributors

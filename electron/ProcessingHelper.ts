@@ -1,13 +1,14 @@
 // ProcessingHelper.ts
 import fs from "node:fs"
-import path from "node:path"
+import * as axios from "axios"
+import { BrowserWindow } from "electron"
+
+import { OpenAI } from "openai"
+import Anthropic from '@anthropic-ai/sdk';
+
+import { configHelper } from "./ConfigHelper"
 import { ScreenshotHelper } from "./ScreenshotHelper"
 import { IProcessingHelperDeps } from "./main"
-import * as axios from "axios"
-import { app, BrowserWindow, dialog } from "electron"
-import { OpenAI } from "openai"
-import { configHelper } from "./ConfigHelper"
-import Anthropic from '@anthropic-ai/sdk';
 
 // Interface for Gemini API requests
 interface GeminiMessage {
@@ -31,18 +32,7 @@ interface GeminiResponse {
     finishReason: string;
   }>;
 }
-interface AnthropicMessage {
-  role: 'user' | 'assistant';
-  content: Array<{
-    type: 'text' | 'image';
-    text?: string;
-    source?: {
-      type: 'base64';
-      media_type: string;
-      data: string;
-    };
-  }>;
-}
+
 export class ProcessingHelper {
   private deps: IProcessingHelperDeps
   private screenshotHelper: ScreenshotHelper
